@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Airborn OS — Startup Ops Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}
+  body{font-family:'DM Sans','Helvetica Neue',sans-serif;background:#0a0a0a;color:#f0f0f0}
+  :root{
+    --o:#FF9828;--c:#FF4C29;--bg:#0a0a0a;--s:#111111;--cd:#181818;
+    --b:#252525;--t:#f0f0f0;--m:#777;--g:#22C55E;--p:#A78BFA;--bl:#38BDF8
+  }
+  .app{display:flex;height:100vh;overflow:hidden}
+
+  /* SIDEBAR */
+  .sidebar{width:210px;height:100vh;background:var(--s);border-right:1px solid var(--b);display:flex;flex-direction:column;transition:width .2s ease;overflow:hidden;flex-shrink:0}
+  .sidebar.collapsed{width:52px}
+  .logo{padding:17px 13px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .logo-icon{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--o),var(--c));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;color:#fff}
+  .logo-text{font-size:14px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden}
+  nav{padding:10px 7px;flex:1;overflow:hidden}
+  .nav-btn{display:flex;align-items:center;gap:9px;width:100%;padding:8px 9px;border-radius:8px;background:transparent;color:var(--m);border:none;cursor:pointer;font-size:12.5px;font-weight:400;margin-bottom:3px;white-space:nowrap;transition:all .15s;text-align:left;font-family:inherit}
+  .nav-btn:hover{background:#ffffff0a;color:#ccc}
+  .nav-btn.active{background:#FF982818;color:var(--o);font-weight:600}
+  .nav-icon{font-size:16px;flex-shrink:0;width:16px}
+  .nav-label{overflow:hidden;white-space:nowrap}
+  .sidebar-foot{padding:10px 7px;border-top:1px solid var(--b);flex-shrink:0}
+
+  /* MAIN */
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+  .header{padding:13px 22px;border-bottom:1px solid var(--b);background:var(--s);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .header-title{font-size:15px;font-weight:700;letter-spacing:-.02em}
+  .header-date{font-size:10.5px;color:var(--m);margin-top:2px}
+  .add-btn{display:flex;align-items:center;gap:7px;padding:8px 16px;background:linear-gradient(135deg,var(--o),var(--c));color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;transition:opacity .15s}
+  .add-btn:hover{opacity:.88}
+  .content{flex:1;overflow-y:auto;padding:18px 22px}
+  .content::-webkit-scrollbar{width:5px}
+  .content::-webkit-scrollbar-track{background:transparent}
+  .content::-webkit-scrollbar-thumb{background:#333;border-radius:99px}
+
+  /* CARDS */
+  .card{background:var(--cd);border:1px solid var(--b);border-radius:13px}
+
+  /* DASHBOARD */
+  .stat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:11px;margin-bottom:16px}
+  .stat-card{background:var(--cd);border:1px solid var(--b);border-radius:11px;padding:13px 15px}
+  .stat-val{font-size:22px;font-weight:800;letter-spacing:-.03em}
+  .stat-lbl{font-size:9px;color:var(--m);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+  .prog-bar{background:var(--b);border-radius:99px;height:7px;overflow:hidden}
+  .prog-fill{height:100%;background:linear-gradient(90deg,var(--o),var(--c));border-radius:99px;transition:width .6s}
+  .task-row{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--b)}
+  .task-row:last-child{border-bottom:none}
+  .avatar{border-radius:99px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+  .badge{font-size:9px;padding:2px 7px;border-radius:99px;font-weight:600;white-space:nowrap}
+
+  /* BOARD */
+  .board-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+  .col-header{padding:12px 13px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between}
+  .task-card{background:var(--cd);border:1px solid var(--b);border-radius:9px;padding:11px;margin-bottom:7px;transition:border-color .15s}
+  .task-card:hover{border-color:#3a3a3a}
+  .move-btns{display:flex;gap:3px;margin-top:8px}
+  .move-btn{flex:1;padding:2px 3px;font-size:8.5px;border-radius:5px;cursor:pointer;font-weight:600;border-width:1px;border-style:solid;font-family:inherit;transition:opacity .15s}
+  .move-btn:hover{opacity:.7}
+  .del-btn{background:transparent;border:none;color:var(--m);cursor:pointer;padding:0;line-height:1;transition:color .15s}
+  .del-btn:hover{color:#ff6b6b}
+  .filter-row{display:flex;gap:6px;margin-bottom:15px;flex-wrap:wrap}
+  .filter-btn{padding:4px 12px;border-radius:99px;border:1px solid var(--b);background:transparent;color:var(--m);cursor:pointer;font-size:11px;font-weight:400;font-family:inherit;transition:all .15s}
+  .filter-btn:hover{border-color:#444;color:#bbb}
+  .filter-btn.active{border-color:var(--o);background:#FF982818;color:var(--o);font-weight:600}
+
+  /* TEAM */
+  .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:15px}
+  .member-card{background:var(--cd);border:1px solid var(--b);border-radius:13px;overflow:hidden}
+  .member-header{padding:16px 17px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:12px}
+  .member-avatar{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;flex-shrink:0}
+  .member-stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--b)}
+  .ms-cell{padding:11px 0;text-align:center;border-right:1px solid var(--b)}
+  .ms-cell:last-child{border-right:none}
+  .ms-val{font-size:18px;font-weight:800}
+  .ms-lbl{font-size:8.5px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;margin-top:1px}
+  .member-tasks-wrap{padding:13px 17px}
+  .mtask{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--b)}
+  .mtask:last-child{border-bottom:none}
+
+  /* ANALYTICS */
+  .analytics-top{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:16px}
+  .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px}
+  .chart-card{padding:17px 19px}
+  .chart-title{font-size:13px;font-weight:600;margin-bottom:15px}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px)}
+  .modal{background:var(--s);border-radius:18px;border:1px solid var(--b);padding:24px 26px;width:440px;max-width:95vw;max-height:90vh;overflow-y:auto}
+  .modal::-webkit-scrollbar{width:4px}
+  .modal::-webkit-scrollbar-thumb{background:#333;border-radius:99px}
+  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .modal-title{font-size:15px;font-weight:700}
+  .form-group{margin-bottom:13px}
+  .form-label{display:block;font-size:9.5px;color:var(--m);margin-bottom:5px;text-transform:uppercase;letter-spacing:.08em}
+  .form-input{width:100%;padding:9px 12px;background:var(--cd);border:1px solid var(--b);border-radius:9px;color:var(--t);font-size:12.5px;outline:none;font-family:inherit;transition:border-color .15s}
+  .form-input:focus{border-color:#444}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px}
+  .submit-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--o),var(--c));color:#fff;border:none;border-radius:11px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;transition:opacity .15s;margin-top:4px}
+  .submit-btn:hover{opacity:.88}
+
+  /* SCROLLBAR for board columns */
+  .col-tasks{padding:7px;max-height:calc(100vh - 220px);overflow-y:auto}
+  .col-tasks::-webkit-scrollbar{width:3px}
+  .col-tasks::-webkit-scrollbar-thumb{background:#333;border-radius:99px}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <div class="logo-icon">A</div>
+      <span class="logo-text" id="logo-text">Airborn OS</span>
+    </div>
+    <nav>
+      <button class="nav-btn active" onclick="setView('dashboard')" id="nav-dashboard">
+        <i class="ti ti-layout-dashboard nav-icon" aria-hidden="true"></i>
+        <span class="nav-label">Dashboard</span>
+      </button>
+      <button class="nav-btn" onclick="setView('board')" id="nav-board">
+        <i class="ti ti-layout-kanban nav-icon" aria-hidden="true"></i>
+        <span class="nav-label">Task Board</span>
+      </button>
+      <button class="nav-btn" onclick="setView('team')" id="nav-team">
+        <i class="ti ti-users nav-icon" aria-hidden="true"></i>
+        <span class="nav-label">Team</span>
+      </button>
+      <button class="nav-btn" onclick="setView('analytics')" id="nav-analytics">
+        <i class="ti ti-chart-bar nav-icon" aria-hidden="true"></i>
+        <span class="nav-label">Analytics</span>
+      </button>
+    </nav>
+    <div class="sidebar-foot">
+      <button class="nav-btn" onclick="toggleSidebar()" id="toggle-btn">
+        <i class="ti ti-menu-2 nav-icon" aria-hidden="true"></i>
+        <span class="nav-label" id="toggle-label">Collapse</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="header">
+      <div>
+        <div class="header-title" id="header-title">🏠 Dashboard</div>
+        <div class="header-date" id="header-date"></div>
+      </div>
+      <button class="add-btn" onclick="openModal()">
+        <i class="ti ti-plus" style="font-size:14px" aria-hidden="true"></i> Add Task
+      </button>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+
+  <!-- ADD TASK MODAL -->
+  <div class="modal-overlay" id="modal" style="display:none" onclick="handleOverlayClick(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">Add New Task</span>
+        <button onclick="closeModal()" style="background:transparent;border:none;color:var(--m);cursor:pointer;font-size:18px;line-height:1"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Task Title *</label>
+        <input class="form-input" id="f-title" placeholder="What needs to be done?" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input class="form-input" id="f-desc" placeholder="Brief description..." />
+      </div>
+      <div class="form-grid">
+        <div>
+          <label class="form-label">Assign To</label>
+          <select class="form-input" id="f-assignee">
+            <option>Founder</option>
+            <option selected>Deku</option>
+            <option>Priya</option>
+            <option>Rohan</option>
+            <option>Aisha</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Priority</label>
+          <select class="form-input" id="f-priority">
+            <option>High</option>
+            <option selected>Medium</option>
+            <option>Low</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Status</label>
+          <select class="form-input" id="f-status">
+            <option selected>Todo</option>
+            <option>In Progress</option>
+            <option>Review</option>
+            <option>Done</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Department</label>
+          <select class="form-input" id="f-dept">
+            <option selected>Tech</option>
+            <option>Marketing</option>
+            <option>Design</option>
+            <option>Ops</option>
+            <option>Sales</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deadline</label>
+        <input class="form-input" type="date" id="f-deadline" />
+      </div>
+      <button class="submit-btn" onclick="addTask()">Add Task →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+const MEMBERS = [
+  {name:'Founder', role:'CEO & Founder',      color:'#FF9828', bg:'#FF982825'},
+  {name:'Deku',    role:'Full Stack Dev',      color:'#A78BFA', bg:'#A78BFA25'},
+  {name:'Priya',   role:'Marketing',           color:'#22C55E', bg:'#22C55E25'},
+  {name:'Rohan',   role:'Designer',            color:'#38BDF8', bg:'#38BDF825'},
+  {name:'Aisha',   role:'Operations',          color:'#FB923C', bg:'#FB923C25'},
+];
+
+const SC = {
+  'Todo':        {color:'#666666', bg:'#66666620'},
+  'In Progress': {color:'#FF9828', bg:'#FF982820'},
+  'Review':      {color:'#A78BFA', bg:'#A78BFA20'},
+  'Done':        {color:'#22C55E', bg:'#22C55E20'},
+};
+const PC = {High:'#FF4C29', Medium:'#FF9828', Low:'#22C55E'};
+const STATUSES  = ['Todo','In Progress','Review','Done'];
+const DEPTS     = ['Tech','Marketing','Design','Ops','Sales'];
+const DEPT_CLRS = ['#FF9828','#FF4C29','#A78BFA','#38BDF8','#22C55E'];
+
+let tasks = [
+  {id:1,  title:'Redesign Shopify product page',  desc:'New product page with reviews carousel and buy CTA',         assignee:'Deku',    priority:'High',   status:'In Progress', dept:'Tech',      deadline:'2026-06-10'},
+  {id:2,  title:'Meta Reels video ad',             desc:'Windcheater jacket 3D animation for Instagram reels',        assignee:'Priya',   priority:'High',   status:'Todo',        dept:'Marketing', deadline:'2026-06-08'},
+  {id:3,  title:'Fix GoKwik checkout',             desc:'Resolve MRP showing issue in cart page',                     assignee:'Deku',    priority:'High',   status:'Review',      dept:'Tech',      deadline:'2026-06-07'},
+  {id:4,  title:'Update size guide page',          desc:'Add measurement charts and comparison table',                assignee:'Rohan',   priority:'Medium', status:'Done',        dept:'Design',    deadline:'2026-06-01'},
+  {id:5,  title:'Instagram content calendar',      desc:'Plan June content calendar for @airborn.in',                 assignee:'Priya',   priority:'Medium', status:'In Progress', dept:'Marketing', deadline:'2026-06-06'},
+  {id:6,  title:'SEO audit — all pages',           desc:'Full SEO and security check with Burp Suite',                assignee:'Deku',    priority:'Medium', status:'Todo',        dept:'Tech',      deadline:'2026-06-15'},
+  {id:7,  title:'Onboard CS intern',               desc:'Cloud & Security intern Day One Brief handover',             assignee:'Founder', priority:'High',   status:'Done',        dept:'Ops',       deadline:'2026-06-03'},
+  {id:8,  title:'Email sequence setup',            desc:'Post-purchase email flow in Shopify',                        assignee:'Aisha',   priority:'Medium', status:'Todo',        dept:'Marketing', deadline:'2026-06-12'},
+  {id:9,  title:'Spin & Win page update',          desc:'Update Google Apps Script URL for new sheet',                assignee:'Deku',    priority:'Low',    status:'Done',        dept:'Tech',      deadline:'2026-06-02'},
+  {id:10, title:'Brand photoshoot planning',       desc:'Coordinate outdoor shoot for new jacket variants',           assignee:'Rohan',   priority:'Medium', status:'In Progress', dept:'Design',    deadline:'2026-06-20'},
+];
+
+let currentView   = 'dashboard';
+let memberFilter  = 'All';
+let sidebarCollapsed = false;
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+const gm = n => MEMBERS.find(m => m.name === n) || MEMBERS[0];
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// ── UI CONTROLS ───────────────────────────────────────────────────────────
+function toggleSidebar() {
+  sidebarCollapsed = !sidebarCollapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed);
+  document.querySelectorAll('.nav-label').forEach(el => el.style.visibility = sidebarCollapsed ? 'hidden' : '');
+  document.getElementById('logo-text').style.visibility = sidebarCollapsed ? 'hidden' : '';
+}
+
+function setView(v) {
+  currentView  = v;
+  memberFilter = 'All';
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + v).classList.add('active');
+  const titles = {dashboard:'🏠 Dashboard', board:'📋 Task Board', team:'👥 Team', analytics:'📊 Analytics'};
+  document.getElementById('header-title').textContent = titles[v];
+  render();
+}
+
+function openModal()  { document.getElementById('modal').style.display = 'flex'; document.getElementById('f-title').focus(); }
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+function handleOverlayClick(e) { if (e.target === document.getElementById('modal')) closeModal(); }
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ── TASK CRUD ─────────────────────────────────────────────────────────────
+function addTask() {
+  const title = document.getElementById('f-title').value.trim();
+  if (!title) { document.getElementById('f-title').focus(); return; }
+  tasks.push({
+    id:       Date.now(),
+    title,
+    desc:     document.getElementById('f-desc').value.trim(),
+    assignee: document.getElementById('f-assignee').value,
+    priority: document.getElementById('f-priority').value,
+    status:   document.getElementById('f-status').value,
+    dept:     document.getElementById('f-dept').value,
+    deadline: document.getElementById('f-deadline').value,
+  });
+  ['f-title','f-desc'].forEach(id => document.getElementById(id).value = '');
+  closeModal();
+  render();
+}
+
+function deleteTask(id) {
+  if (!confirm('Delete this task?')) return;
+  tasks = tasks.filter(t => t.id !== id);
+  render();
+}
+
+function moveTask(id, status) {
+  tasks = tasks.map(t => t.id === id ? {...t, status} : t);
+  render();
+}
+
+function setFilter(f) {
+  memberFilter = f;
+  render();
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function render() {
+  const c = document.getElementById('content');
+  if      (currentView === 'dashboard') c.innerHTML = renderDashboard();
+  else if (currentView === 'board')     c.innerHTML = renderBoard();
+  else if (currentView === 'team')      c.innerHTML = renderTeam();
+  else                                  c.innerHTML = renderAnalytics();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const done   = tasks.filter(t => t.status === 'Done').length;
+  const inProg = tasks.filter(t => t.status === 'In Progress').length;
+  const rev    = tasks.filter(t => t.status === 'Review').length;
+  const todo   = tasks.filter(t => t.status === 'Todo').length;
+  const urgent = tasks.filter(t => t.priority === 'High' && t.status !== 'Done').length;
+  const rate   = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+  const active = tasks.filter(t => t.status !== 'Done');
+
+  const stats = [
+    {label:'Total',       val:tasks.length, color:'#FF9828'},
+    {label:'Todo',        val:todo,          color:'#666'},
+    {label:'In Progress', val:inProg,        color:'#38BDF8'},
+    {label:'In Review',   val:rev,           color:'#A78BFA'},
+    {label:'Completed',   val:done,          color:'#22C55E'},
+    {label:'Urgent',      val:urgent,        color:'#FF4C29'},
+  ];
+
+  return `
+    <div class="stat-grid">
+      ${stats.map(s => `
+        <div class="stat-card">
+          <div class="stat-val" style="color:${s.color}">${s.val}</div>
+          <div class="stat-lbl">${s.label}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="card" style="padding:17px 19px;margin-bottom:15px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px">
+        <span style="font-size:12.5px;font-weight:600">Overall Completion</span>
+        <span style="font-size:12px;color:var(--o);font-weight:700">${rate}% complete</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${rate}%"></div></div>
+      <div style="display:flex;gap:16px;margin-top:11px;flex-wrap:wrap">
+        ${STATUSES.map(s => `
+          <div style="display:flex;align-items:center;gap:5px">
+            <div style="width:6px;height:6px;border-radius:99px;background:${SC[s].color}"></div>
+            <span style="font-size:9.5px;color:var(--m)">${s}: <span style="color:#aaa">${tasks.filter(t => t.status === s).length}</span></span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="card" style="padding:17px 19px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:13px;display:flex;justify-content:space-between;align-items:center">
+        <span>Active Tasks</span>
+        <span style="font-size:10.5px;color:var(--m)">${active.length} open</span>
+      </div>
+      ${active.length === 0 ? `<div style="text-align:center;color:var(--m);padding:20px;font-size:13px">🎉 All tasks complete!</div>` :
+        active.map((task, i) => {
+          const m = gm(task.assignee);
+          return `
+            <div class="task-row" style="${i === active.length - 1 ? 'border-bottom:none' : ''}">
+              <div class="avatar" style="width:26px;height:26px;font-size:10px;background:${m.bg};color:${m.color}">${esc(task.assignee[0])}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(task.title)}</div>
+                <div style="font-size:10.5px;color:var(--m);margin-top:1px">${esc(task.assignee)} · ${esc(task.dept)}</div>
+              </div>
+              <div style="display:flex;gap:5px;flex-shrink:0">
+                <span class="badge" style="background:${SC[task.status].bg};color:${SC[task.status].color}">${task.status}</span>
+                <span class="badge" style="background:${PC[task.priority]}18;color:${PC[task.priority]}">${task.priority}</span>
+              </div>
+            </div>
+          `;
+        }).join('')
+      }
+    </div>
+  `;
+}
+
+// ── BOARD ─────────────────────────────────────────────────────────────────
+function renderBoard() {
+  const filtered = tasks.filter(t => memberFilter === 'All' || t.assignee === memberFilter);
+
+  return `
+    <div class="filter-row">
+      ${['All', ...MEMBERS.map(m => m.name)].map(n => `
+        <button class="filter-btn ${memberFilter === n ? 'active' : ''}" onclick="setFilter('${n}')">${n}</button>
+      `).join('')}
+    </div>
+    <div class="board-grid">
+      ${STATUSES.map(status => {
+        const col = filtered.filter(t => t.status === status);
+        return `
+          <div style="background:var(--s);border-radius:12px;border:1px solid var(--b);overflow:hidden;display:flex;flex-direction:column">
+            <div class="col-header">
+              <div style="display:flex;align-items:center;gap:7px">
+                <div style="width:7px;height:7px;border-radius:99px;background:${SC[status].color}"></div>
+                <span style="font-size:12px;font-weight:600">${status}</span>
+              </div>
+              <span class="badge" style="background:${SC[status].bg};color:${SC[status].color}">${col.length}</span>
+            </div>
+            <div class="col-tasks">
+              ${col.map(task => {
+                const m = gm(task.assignee);
+                const others = STATUSES.filter(s => s !== status);
+                return `
+                  <div class="task-card">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:5px;margin-bottom:5px">
+                      <span style="font-size:11.5px;font-weight:600;line-height:1.35;flex:1">${esc(task.title)}</span>
+                      <button class="del-btn" onclick="deleteTask(${task.id})" title="Delete task">
+                        <i class="ti ti-x" style="font-size:11px"></i>
+                      </button>
+                    </div>
+                    ${task.desc ? `<div style="font-size:10px;color:var(--m);margin-bottom:8px;line-height:1.4">${esc(task.desc.substring(0,55))}${task.desc.length > 55 ? '…' : ''}</div>` : ''}
+                    <div style="display:flex;align-items:center;justify-content:space-between">
+                      <div style="display:flex;align-items:center;gap:5px">
+                        <div class="avatar" style="width:20px;height:20px;font-size:8px;background:${m.bg};color:${m.color}">${esc(task.assignee[0])}</div>
+                        <span style="font-size:10px;color:var(--m)">${esc(task.assignee)}</span>
+                      </div>
+                      <span class="badge" style="background:${PC[task.priority]}18;color:${PC[task.priority]}">${task.priority}</span>
+                    </div>
+                    ${task.deadline ? `<div style="font-size:9.5px;color:var(--m);margin-top:7px;display:flex;align-items:center;gap:3px"><i class="ti ti-clock" style="font-size:10px"></i>${task.deadline}</div>` : ''}
+                    <div class="move-btns">
+                      ${others.map(s => `
+                        <button class="move-btn" style="background:${SC[s].bg};color:${SC[s].color};border-color:${SC[s].color}33"
+                          onclick="moveTask(${task.id},'${s}')" title="Move to ${s}">
+                          ${s === 'Done' ? '✓' : s.substring(0,3)}
+                        </button>
+                      `).join('')}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+              ${col.length === 0 ? `<div style="text-align:center;color:var(--m);font-size:11px;padding:18px 0;opacity:.7">No tasks here</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ── TEAM ─────────────────────────────────────────────────────────────────
+function renderTeam() {
+  return `
+    <div class="team-grid">
+      ${MEMBERS.map(member => {
+        const mt = tasks.filter(t => t.assignee === member.name);
+        const md = mt.filter(t => t.status === 'Done').length;
+        const ma = mt.filter(t => t.status !== 'Done');
+        const mr = mt.length ? Math.round(md / mt.length * 100) : 0;
+        return `
+          <div class="member-card">
+            <div class="member-header">
+              <div class="member-avatar" style="background:${member.bg};color:${member.color}">${member.name[0]}</div>
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:700">${esc(member.name)}</div>
+                <div style="font-size:10.5px;color:var(--m)">${esc(member.role)}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:21px;font-weight:800;color:${member.color}">${mr}%</div>
+                <div style="font-size:9px;color:var(--m)">complete</div>
+              </div>
+            </div>
+            <div style="padding:5px 17px 0;border-bottom:1px solid var(--b)">
+              <div style="background:var(--b);border-radius:99px;height:4px;overflow:hidden;margin-bottom:10px">
+                <div style="height:100%;width:${mr}%;background:linear-gradient(90deg,${member.color},${member.color}99);border-radius:99px;transition:width .5s"></div>
+              </div>
+            </div>
+            <div class="member-stats-row">
+              ${[['Total',mt.length],['Active',ma.length],['Done',md]].map(([l,v]) => `
+                <div class="ms-cell">
+                  <div class="ms-val">${v}</div>
+                  <div class="ms-lbl">${l}</div>
+                </div>
+              `).join('')}
+            </div>
+            <div class="member-tasks-wrap">
+              ${ma.length === 0
+                ? `<div style="font-size:11px;color:var(--m);text-align:center;padding:5px 0">All tasks complete 🎉</div>`
+                : ma.slice(0, 3).map((t, i) => `
+                    <div class="mtask" style="${i === Math.min(ma.length,3)-1 ? 'border-bottom:none' : ''}">
+                      <div style="width:6px;height:6px;border-radius:99px;background:${SC[t.status].color};flex-shrink:0"></div>
+                      <span style="flex:1;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.title)}</span>
+                      <span class="badge" style="background:${PC[t.priority]}18;color:${PC[t.priority]}">${t.priority}</span>
+                    </div>
+                  `).join('')
+              }
+              ${ma.length > 3 ? `<div style="font-size:10px;color:var(--m);text-align:center;margin-top:8px">+${ma.length - 3} more tasks</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ── ANALYTICS ────────────────────────────────────────────────────────────
+function renderAnalytics() {
+  const done   = tasks.filter(t => t.status === 'Done').length;
+  const rate   = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+  const urgent = tasks.filter(t => t.priority === 'High' && t.status !== 'Done').length;
+  const activeM = MEMBERS.filter(m => tasks.some(t => t.assignee === m.name && t.status !== 'Done')).length;
+  const maxMember = Math.max(...MEMBERS.map(m => tasks.filter(t => t.assignee === m.name).length), 1);
+  const depts = DEPTS.map((d,i) => ({d, v:tasks.filter(t => t.dept === d).length, c:DEPT_CLRS[i]})).filter(d => d.v > 0);
+  const maxDept = Math.max(...depts.map(d => d.v), 1);
+
+  // Pie chart SVG
+  const statusCounts = STATUSES.map(s => ({s, v:tasks.filter(t => t.status === s).length})).filter(d => d.v > 0);
+  const total = statusCounts.reduce((a,b) => a + b.v, 0) || 1;
+  let angle = 0;
+  const pieSegs = statusCounts.map(({s, v}) => {
+    const pct = v / total;
+    const start = angle;
+    angle += pct * 360;
+    const large = pct > 0.5 ? 1 : 0;
+    const r = 38; const cx = 50; const cy = 50;
+    const a1 = (start - 90) * Math.PI / 180;
+    const a2 = (start + pct * 360 - 90) * Math.PI / 180;
+    const x1 = cx + r * Math.cos(a1); const y1 = cy + r * Math.sin(a1);
+    const x2 = cx + r * Math.cos(a2); const y2 = cy + r * Math.sin(a2);
+    return `<path d="M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)} Z" fill="${SC[s].color}"/>`;
+  });
+
+  return `
+    <div class="analytics-top">
+      ${[
+        {label:'Completion Rate',   val:`${rate}%`,  sub:`${done} of ${tasks.length} tasks done`,  color:'#22C55E'},
+        {label:'Urgent Pending',    val:urgent,       sub:'High priority open tasks',               color:'#FF4C29'},
+        {label:'Active Members',    val:activeM,      sub:'Members with open tasks',                color:'#FF9828'},
+      ].map(({label,val,sub,color}) => `
+        <div class="card" style="padding:17px 19px">
+          <div style="font-size:30px;font-weight:800;color:${color};letter-spacing:-.04em">${val}</div>
+          <div style="font-size:13px;font-weight:600;margin-top:5px">${label}</div>
+          <div style="font-size:10.5px;color:var(--m);margin-top:2px">${sub}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="charts-row">
+      <div class="card chart-card">
+        <div class="chart-title">Tasks per Member</div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          ${MEMBERS.map(m => {
+            const tot  = tasks.filter(t => t.assignee === m.name).length;
+            const dn   = tasks.filter(t => t.assignee === m.name && t.status === 'Done').length;
+            const pctT = maxMember ? Math.round(tot / maxMember * 100) : 0;
+            const pctD = tot ? Math.round(dn  / tot  * 100) : 0;
+            return `
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div class="avatar" style="width:19px;height:19px;font-size:8px;background:${m.bg};color:${m.color}">${m.name[0]}</div>
+                    <span style="font-size:11.5px">${esc(m.name)}</span>
+                  </div>
+                  <span style="font-size:10px;color:var(--m)">${tot} tasks · ${pctD}% done</span>
+                </div>
+                <div style="background:var(--b);border-radius:99px;height:6px;position:relative;overflow:hidden">
+                  <div style="position:absolute;height:100%;width:${pctT}%;background:${m.color}35;border-radius:99px"></div>
+                  <div style="position:absolute;height:100%;width:${Math.round(dn/maxMember*100)}%;background:${m.color};border-radius:99px"></div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+          <div style="display:flex;gap:14px;margin-top:5px">
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:2px;background:#aaa5"></div><span style="font-size:9.5px;color:var(--m)">Total</span></div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:2px;background:#22C55E"></div><span style="font-size:9.5px;color:var(--m)">Done</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="chart-title">Status Breakdown</div>
+        <div style="display:flex;align-items:center;gap:20px">
+          <svg viewBox="0 0 100 100" style="width:95px;height:95px;flex-shrink:0" role="img" aria-label="Status breakdown pie chart">
+            <title>Task status breakdown</title>
+            ${pieSegs.join('')}
+            <circle cx="50" cy="50" r="23" fill="#181818"/>
+            <text x="50" y="54" text-anchor="middle" fill="#f0f0f0" font-size="11" font-weight="800" font-family="DM Sans,sans-serif">${rate}%</text>
+          </svg>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${statusCounts.map(({s,v}) => `
+              <div style="display:flex;align-items:center;gap:7px">
+                <div style="width:7px;height:7px;border-radius:99px;background:${SC[s].color};flex-shrink:0"></div>
+                <span style="font-size:11px;color:var(--m);white-space:nowrap">${s}</span>
+                <span style="font-size:11px;font-weight:600">${v}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="chart-title">Tasks by Department</div>
+      <div style="display:flex;gap:12px;align-items:flex-end;height:110px;padding-bottom:24px;position:relative;border-bottom:1px solid var(--b)">
+        ${depts.map(({d,v,c}) => `
+          <div style="display:flex;flex-direction:column;align-items:center;flex:1;height:100%;justify-content:flex-end;position:relative">
+            <span style="font-size:9.5px;color:var(--m);margin-bottom:3px">${v}</span>
+            <div style="width:100%;background:${c};border-radius:4px 4px 0 0;height:${Math.round(v/maxDept*72)}px;transition:height .5s"></div>
+            <span style="font-size:9.5px;color:var(--m);position:absolute;bottom:-20px">${esc(d)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN', {
+  weekday:'long', day:'numeric', month:'long', year:'numeric'
+});
+render();
+</script>
+</body>
+</html>
